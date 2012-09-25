@@ -51,6 +51,9 @@
   var WIDTH = 930,
       HEIGHT = 630,
       LABELS_WIDTH = 70;
+      
+  // List of NorthEast states for labelling
+  var neStates = ['VT', 'NH', 'MA', 'RI', 'CT', 'NJ', 'DE', 'MD', 'DC'];
   
   // Default options
   var defaults = {
@@ -171,6 +174,7 @@
       // Keep track of all the states
       this.stateHitAreas = {}; // transparent for the hit area
       this.stateShapes = {}; // for the visual shape
+      this.stateShapeTexts = {}; // for the text inside shapes
       this.topShape = null;
       
       // create all the states
@@ -266,6 +270,26 @@
         this.stateHitAreas[state] = R.path(paths[state]).attr({fill: "#000",
       "stroke-width": 0, "opacity" : 0.0, 'cursor': 'pointer'});
         this.stateHitAreas[state].node.dataState = state;
+        
+        if(this.options.showLabels && $.inArray(state, neStates) == -1) {
+          var textAttr = this.options.labelTextStyles;
+          box = this.stateShapes[state].getBBox();
+                  
+          // attributes for styling the text
+          stateAttr = {};
+          if(this.options.stateSpecificLabelTextStyles[state]) {
+            $.extend(stateAttr, textAttr, this.options.stateSpecificLabelTextStyles[state]);
+          } else {
+            $.extend(stateAttr, textAttr);
+          }
+          
+          // adjust font-size
+          if(stateAttr['font-size']) {
+            stateAttr['font-size'] = (parseInt(stateAttr['font-size'])/this.scale) + 'px';
+          }
+        
+          this.stateShapeTexts[state] = R.text(box.x + (box.width/2), box.y + (box.height/2), state).attr(stateAttr);
+        }
       }
       
       // Bind events
@@ -289,7 +313,6 @@
      */
     _initCreateLabels: function() {
       var R = this.paper; // shorter name for usage here
-      var neStates = ['VT', 'NH', 'MA', 'RI', 'CT', 'NJ', 'DE', 'MD', 'DC'];
       
       // calculate the values for placing items
       var neBoxX = 860;
@@ -312,7 +335,6 @@
       var textAttr = this.options.labelTextStyles;
       var stateAttr = {};
       
-      // NE States
       for(var i=0, x, y, state; i<neStates.length; ++i) {
         state = neStates[i];
         
@@ -388,7 +410,8 @@
       var stateHitArea = this.stateHitAreas[stateName];
       var labelBacking = this.labelShapes[stateName];
       var labelText = this.labelTexts[stateName];
-      var labelHitArea = this.labelHitAreas[stateName]
+      var labelHitArea = this.labelHitAreas[stateName];
+      var shapeText = this.stateShapeTexts[stateName];
       
       return {
         shape: stateShape, 
@@ -396,7 +419,8 @@
         name: stateName, 
         labelBacking: labelBacking, 
         labelText: labelText, 
-        labelHitArea: labelHitArea
+        labelHitArea: labelHitArea,
+        shapeText: shapeText
       };
     },
     
@@ -486,7 +510,7 @@
      */
     _defaultMouseOverAction: function(stateData) {
       // hover effect
-      this.bringShapeToFront(stateData.shape);
+      // this.bringShapeToFront(stateData.shape);
       this.paper.safari();
       
       // ... for the state
